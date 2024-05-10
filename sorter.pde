@@ -186,7 +186,7 @@ float sortValue(color pix, int mode){
 		case 2: 
 			return brightness(pix);
 		default :
-			println("INVALID SORT TARGET INTEGER");
+			println("INVALID SORT TARGET INTEGER. 0: hue, 1: saturation, 2: brightness");
 			return 0.0;
 	}
 }
