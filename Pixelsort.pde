@@ -1,31 +1,17 @@
 import processing.video.*;
 
-int STL = 0, SEQ = 1, CAP = 2;
-int mode = CAP;
+int STL = 0, SEQ = 1, CAP = 2, MOV = 3;
 
-// STILL IMAGE
-// variable for still image
-PImage img;
+PImage stlImg;
 
-
-// IMAGE SEQUENCE
-// variable for image sequence
 PImage[] seq;
 
-// length of image sequence
-int seqLen = 83;
-
-int targetFps = 10;
-
-boolean showProcessTime = true;
-
-
-// CAMERA CAPTURE
 String[] devices = Capture.list();
 Capture input;
 
+Movie mov;
 
-int canvSize = 800;
+
 int pad, imgLongSide;
 
 int HUE = 0, SAT = 1, BRI = 2;
@@ -52,7 +38,7 @@ void setup() {
 			seq = new PImage[seqLen];
 
 			for (int i = 0; i < seqLen; ++i) {
-				seq[i] = loadImage("seq/" + i + ".png");
+				seq[i] = loadImage(seqPrefix + i + seqSuffix);
 				println("Loading... " + (i + 1) + " / " + seqLen);
 			}
 
@@ -75,35 +61,32 @@ void setup() {
 				println("NO AVAILABLE INPUT DEVICES.");
 				exit();
 			}
+		case 3:
+			mov = new Movie(this, fileName);
+			mov.loop();
+			return;
 		default:
-			println("INVALID MODE INTEGER. 0: still, 1: sequence, 2: capture");
+			println("INVALID MODE INTEGER. 0: still, 1: sequence, 2: capture, 3: movie file");
 			return;
 	}
 
 
 	//  APPLY TO STILL IMAGE
 	// -------------------------------
-	img = loadImage("photo.png");
+	stlImg = loadImage(fileName);
 
-	showFittedImage(img, 0);
+	showFittedImage(stlImg, 0);
 
 	loadPixels();
 
-	// doSort
-	// arguments:
-	// - mask mode (int, you can use: (HUE, SAT, BRI))
-	// - mask lower threshold (int)
-	// - mask higher threshold (int)
-	// - sort direction (int, you can use: (HOR, VER))
-	// - invert sort result (bool)
-	// - sort target (int, you can use: (HUE, SAT, BRI))
-	doSort(HUE, 80, 150, HOR, false, BRI);
-	doSort(BRI, 45, 100, VER, true, BRI);
-	doSort(BRI, 45, 100, HOR, false, SAT);
-	doSort(BRI, 52, 90, VER, false, BRI);
+	// you can also set sort functions separately
+	// doSort(HUE, 80, 70, HOR, false, BRI);
+	// doSort(BRI, 45, 55, VER, true, BRI);
+	// doSort(BRI, 45, 55, HOR, false, SAT);
+	// doSort(BRI, 52, 38, VER, false, BRI);
 
 	// or you can use sortStack()
-	// sortStack();
+	sortStack();
 
 	// uncomment to check mask :)
 	// showMask(BRI, 52, 90);
@@ -131,10 +114,15 @@ void draw(){
 				input.read();
 				showFittedImage(input, 0);
 			}
-
+			break;
+		case 3:
+			if (mov.available()) {
+				mov.read();
+				showFittedImage(mov, 0);
+			}
 			break;
 		default:
-			println("INVALID MODE INTEGER. 0: still, 1: sequence, 2: capture");
+			println("INVALID MODE INTEGER. 0: still, 1: sequence, 2: capture, 3: movie file");
 			return;
 	}
 
@@ -156,11 +144,10 @@ void draw(){
 void sortStack(){
 	int start = millis();
 
-	doSortHush(BRI, 40, 100, VER, false, BRI);
-	doSortHush(HUE, 170, 220, HOR, false, BRI);
+	customSortStack();	
 
 	if (millis() - start > 1000 / targetFps) {
-		println("[WARN] Delayed! Time took: " + (millis() - start) + "msec(s), Budget: " + (1000 / targetFps) + "msec(s)");
+		println("[SORT STACK] Delayed! Time took: " + (millis() - start) + "msec(s), Budget: " + (1000 / targetFps) + "msec(s)");
 	}
 }
 
@@ -170,6 +157,7 @@ void showFittedImage(PImage img, int pad){
 
 	boolean isWidthLonger = img.width >= img.height;
 
+
 	float ratio = isWidthLonger ? (float) img.height / img.width : (float) img.width / img.height;
 
 	int imgW = isWidthLonger ? imgLongSide : round(imgLongSide * ratio);
@@ -178,6 +166,20 @@ void showFittedImage(PImage img, int pad){
 	int px = isWidthLonger ? pad : (width - imgW) / 2;
 	int py = isWidthLonger ? (height - imgH) / 2 : pad;
 
+
+	if (mode == 3) {
+		PImage processImage;
+
+		processImage = img.get();
+
+		processImage.resize(imgW, imgH);
+
+		background(0);
+		image(processImage, px, py);
+		return;
+	}
+
+
 	img.resize(imgW, imgH);
 
 	background(0);
@@ -185,23 +187,23 @@ void showFittedImage(PImage img, int pad){
 }
 
 
-void doSort(int maskMode, int threshLow, int threshHigh, int direction, boolean invert, int sortBy){
+void doSort(int maskMode, int threshStart, int threshRange, int direction, boolean invert, int sortBy){
 	int started = millis();
 
-	boolean[] mask = makeMask(maskMode, threshLow, threshHigh);
+	boolean[] mask = makeMask(maskMode, threshStart, threshRange);
 	apply(mask, direction, invert, sortBy);
 	println("Sorted. Time took: " + (millis() - started) + " msec(s).");
 }
 
-void doSortHush(int maskMode, int threshLow, int threshHigh, int direction, boolean invert, int sortBy){
-	boolean[] mask = makeMask(maskMode, threshLow, threshHigh);
+void doSortHush(int maskMode, int threshStart, int threshRange, int direction, boolean invert, int sortBy){
+	boolean[] mask = makeMask(maskMode, threshStart, threshRange);
 	apply(mask, direction, invert, sortBy);
 }
 
-void showMask(int maskMode, int threshLow, int threshHigh){
+void showMask(int maskMode, int threshStart, int threshRange){
 	int started = millis();
 
-	boolean[] mask = makeMask(maskMode, threshLow, threshHigh);
+	boolean[] mask = makeMask(maskMode, threshStart, threshRange);
 	int idx = 0;
 	for (boolean pix : mask) {
 		pixels[idx] = pix ? color(0, 0, 100) : color(0);
@@ -210,8 +212,8 @@ void showMask(int maskMode, int threshLow, int threshHigh){
 	println("Mask drawn. Time took: " + (millis() - started) + " msec(s).");
 }
 
-void showMaskHush(int maskMode, int threshLow, int threshHigh){
-	boolean[] mask = makeMask(maskMode, threshLow, threshHigh);
+void showMaskHush(int maskMode, int threshStart, int threshRange){
+	boolean[] mask = makeMask(maskMode, threshStart, threshRange);
 	int idx = 0;
 	for (boolean pix : mask) {
 		pixels[idx] = pix ? color(0, 0, 100) : color(0);
@@ -219,7 +221,7 @@ void showMaskHush(int maskMode, int threshLow, int threshHigh){
 	}
 }
 
-boolean[] makeMask(int mode, int threshLow, int threshHigh){
+boolean[] makeMask(int mode, int threshStart, int threshRange){
 	boolean[] mask = new boolean[pixels.length];
 
 	int i = 0;
@@ -227,21 +229,21 @@ boolean[] makeMask(int mode, int threshLow, int threshHigh){
 	for (color pix : pixels) {
 		switch (mode) {
 			case 0:
-				if (hue(pix) > threshLow && hue(pix) < threshHigh) {
+				if (isAngleInRange(hue(pix), threshStart, threshRange, 360)) {
 					mask[i] = true;
 				}else{
 					mask[i] = false;
 				}
 				break;
 			case 1:
-				if (saturation(pix) > threshLow && saturation(pix) < threshHigh) {
+				if (isAngleInRange(saturation(pix), threshStart, threshRange, 100)) {
 					mask[i] = true;
 				}else{
 					mask[i] = false;
 				}
 				break;
 			case 2:
-				if (brightness(pix) > threshLow && brightness(pix) < threshHigh) {
+				if (isAngleInRange(brightness(pix), threshStart, threshRange, 100)) {
 					mask[i] = true;
 				}else{
 					mask[i] = false;
@@ -257,4 +259,18 @@ boolean[] makeMask(int mode, int threshLow, int threshHigh){
 
 
 	return mask;
+}
+
+boolean isAngleInRange(float ang, int start, int range, int lim){
+	float norAng = normalizeAng(ang, lim);
+	float norStrt = normalizeAng(start, lim);
+	float norRng = normalizeAng(range, lim);
+
+	float endAng = norStrt + norRng;
+
+	return norStrt <= norAng && norAng <= endAng;
+}
+
+float normalizeAng(float ang, int lim){
+	return abs(ang) % lim;
 }
