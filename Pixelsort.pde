@@ -1,5 +1,7 @@
-// show still image?
-boolean STILL = true;
+import processing.video.*;
+
+int STL = 0, SEQ = 1, CAP = 2;
+int mode = CAP;
 
 // STILL IMAGE
 // variable for still image
@@ -10,9 +12,17 @@ PImage img;
 // variable for image sequence
 PImage[] seq;
 
+// length of image sequence
 int seqLen = 83;
 
 int targetFps = 10;
+
+boolean showProcessTime = true;
+
+
+// CAMERA CAPTURE
+String[] devices = Capture.list();
+Capture input;
 
 
 int canvSize = 800;
@@ -30,15 +40,46 @@ void setup() {
 
 	colorMode(HSB, 360, 100, 100);
 
-	if (!STILL) {
-		seq = new PImage[seqLen];
-
-		for (int i = 0; i < seqLen; ++i) {
-			seq[i] = loadImage("seq/" + i + ".png");
-		}
-
-		return;
+	if (showProcessTime) {
+		textSize(16);
+		fill(0, 0, 80);
 	}
+
+	switch (mode) {
+		case 0:
+			break;
+		case 1:
+			seq = new PImage[seqLen];
+
+			for (int i = 0; i < seqLen; ++i) {
+				seq[i] = loadImage("seq/" + i + ".png");
+				println("Loading... " + (i + 1) + " / " + seqLen);
+			}
+
+			return;
+		case 2:
+			while(devices.length == 0){
+				devices = Capture.list();
+			}
+
+			for (String dev : devices) {
+				println(dev);
+			}
+
+			if (devices.length > 0) {
+				input = new Capture(this, devices[0]);
+				input.start();
+
+				return;
+			}else{
+				println("NO AVAILABLE INPUT DEVICES.");
+				exit();
+			}
+		default:
+			println("INVALID MODE INTEGER. 0: still, 1: sequence, 2: capture");
+			return;
+	}
+
 
 	//  APPLY TO STILL IMAGE
 	// -------------------------------
@@ -62,7 +103,7 @@ void setup() {
 	doSort(BRI, 52, 90, VER, false, BRI);
 
 	// or you can use sortStack()
-	sortStack();
+	// sortStack();
 
 	// uncomment to check mask :)
 	// showMask(BRI, 52, 90);
@@ -71,22 +112,45 @@ void setup() {
 }
 
 void draw(){
+	int frameStart = millis();
+
 	if (keyPressed && (key == 'S' || key == 's')) {
 		java.util.Date d = new java.util.Date();
 		save("save" + d.getTime() + ".png");
 	}
 
-	if (STILL) { return; }
 
-	//  APPLY TO IMAGE SEQUENCE
-	// ----------------------------------
-	showFittedImage(seq[frameCount % seq.length], 0);
+	switch (mode) {
+		case 0:
+			return;
+		case 1:
+			showFittedImage(seq[frameCount % seq.length], 0);
+			break;
+		case 2:
+			if (input.available()) {
+				input.read();
+				showFittedImage(input, 0);
+			}
+
+			break;
+		default:
+			println("INVALID MODE INTEGER. 0: still, 1: sequence, 2: capture");
+			return;
+	}
+
+
+	int sortStart = millis();
 
 	loadPixels();
-
+	
 	sortStack();
 
 	updatePixels();
+
+	if (showProcessTime) {
+		text("frm: " + (millis() - frameStart) + "ms", 20, 30);
+		text("srt: " + (millis() - sortStart) + "ms", 20, 50);
+	}
 }
 
 void sortStack(){
@@ -94,8 +158,6 @@ void sortStack(){
 
 	doSortHush(BRI, 40, 100, VER, false, BRI);
 	doSortHush(HUE, 170, 220, HOR, false, BRI);
-	doSortHush(HUE, 80, 220, VER, false, BRI);
-	doSortHush(HUE, 80, 220, HOR, false, BRI);
 
 	if (millis() - start > 1000 / targetFps) {
 		println("[WARN] Delayed! Time took: " + (millis() - start) + "msec(s), Budget: " + (1000 / targetFps) + "msec(s)");
