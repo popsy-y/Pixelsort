@@ -7,13 +7,8 @@ PImage stlImg;
 
 PImage[] seq;
 
-<<<<<<< HEAD
 // String[] devices;
 PCapture input;
-=======
-String[] devices = Capture.list();
-Capture input;
->>>>>>> b0fdce92f8ac834ab0dbd2e9cffd306b0c5f7beb
 
 Movie mov;
 
@@ -126,7 +121,7 @@ void draw(){
 			if (input.available()) {
 				// println("read start");
 				// println("input: "+input);
-				// input.read();
+				input.read();
 				// println("read end");
 			}
 
@@ -156,10 +151,6 @@ void draw(){
 		text("frm: " + (millis() - frameStart) + "ms", 20, 30);
 		text("srt: " + (millis() - sortStart) + "ms", 20, 50);
 	}
-}
-
-void captureEvent(PCapture c){
-	c.read();
 }
 
 void sortStack(){
