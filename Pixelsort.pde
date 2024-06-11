@@ -7,8 +7,13 @@ PImage stlImg;
 
 PImage[] seq;
 
+<<<<<<< HEAD
 // String[] devices;
 PCapture input;
+=======
+String[] devices = Capture.list();
+Capture input;
+>>>>>>> b0fdce92f8ac834ab0dbd2e9cffd306b0c5f7beb
 
 Movie mov;
 

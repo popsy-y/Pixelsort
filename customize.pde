@@ -11,13 +11,13 @@ int canvSize = 1000;
 //  STL / SEQ / MOV
 // --------------------------
 // file name
-String fileName = "mov/xiv2.mp4";
+String fileName = "mov/garage.mp4";
 
 
 //  SEQ / CAP / MOV
 // --------------------------
 // framerate cap
-int targetFps = 10;
+int targetFps = 20;
 
 // show frametime on top left of screen
 boolean showProcessTime = true;
