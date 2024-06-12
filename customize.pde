@@ -40,8 +40,8 @@ String seqSuffix = ".png";
 // ---------------------
 // (or you can apply each sort manually, samples are in bottom of setup()@Pixelsort.pde)
 void customSortStack(){
-	// doSortHush(BRI, 10, 20, VER, true, BRI);
-	doSortHush(HUE, 300, 120, HOR, false, BRI);
+	// doSortHush(BRI, 3, 250, VER, true, BRI);
+	doSortHush(HUE, 20, 70, HOR, false, BRI);
 
 	// doSortHush(HUE, 70, 70, VER, false, BRI);
 	// doSortHush(SAT, 30, 70, VER, true, BRI);

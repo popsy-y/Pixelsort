@@ -1,5 +1,4 @@
 import processing.video.*;
-import pcapture.*;
 
 int STL = 0, SEQ = 1, CAP = 2, MOV = 3;
 
@@ -7,8 +6,7 @@ PImage stlImg;
 
 PImage[] seq;
 
-// String[] devices;
-PCapture input;
+Capture input;
 
 Movie mov;
 
@@ -23,7 +21,7 @@ void settings(){
 }
 
 void setup() {
-	// frameRate(targetFps);
+	frameRate(targetFps);
 
 	colorMode(HSB, 360, 100, 100);
 
@@ -45,22 +43,20 @@ void setup() {
 
 			return;
 		case 2:
-			// String[] devices = Capture.list();
+			String[] devices = Capture.list();
 
-			// while(devices.length == 0){
-			// 	devices = Capture.list();
-			// }
+			while(devices.length == 0){
+				devices = Capture.list();
+			}
 
 
-			String[] devices = PCapture.list();
-			// for (String dev : devices) {
-			// 	println(dev);
-			// }
+			// String[] devices = PCapture.list();
+			for (String dev : devices) {
+				println(dev);
+			}
 
 			if (devices.length > 0) {
-				input = new PCapture(this, 640, 480, PCapture.list()[0]);
-
-				delay(1000);
+				input = new Capture(this, 640, 480, devices[0]);
 
 				input.start();
 
@@ -118,14 +114,14 @@ void draw(){
 			showFittedImage(seq[frameCount % seq.length], 0);
 			break;
 		case 2:
-			if (input.available()) {
-				// println("read start");
-				// println("input: "+input);
-				input.read();
-				// println("read end");
-			}
+			if (!input.available()) return;
 
-			showFittedImage(input, 0);
+			input.read();
+
+			Capture tmp = input;
+
+			// image(tmp, 0, 0);
+			showFittedImage(tmp.get(), 0);
 			break;
 		case 3:
 			if (mov.available()) {
