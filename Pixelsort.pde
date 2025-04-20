@@ -160,8 +160,7 @@ void sortStack(){
 }
 
 void showFittedImage(PImage img, int pad){
-	imgLongSide = canvSize - (pad * 2);
-
+	imgLongSide = canvSize - (pad * 2); 
 
 	boolean isWidthLonger = img.width >= img.height;
 
