@@ -59,3 +59,7 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/windows,visualstudiocode,processing
+
+data/*
+!data/mov/garage.mp4
+!data/mov/movie_credit.txt
